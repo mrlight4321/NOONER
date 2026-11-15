@@ -56,18 +56,29 @@
       letter-spacing: 1px;
     }
 
-    .sound-btn {
+    .top-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: #fff;
       width: 38px;
       height: 38px;
       border-radius: 50%;
-      font-size: 18px;
+      font-size: 16px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: opacity 0.2s;
+    }
+
+    .icon-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
     }
 
     .confidence-wrapper {
@@ -226,7 +237,10 @@
   <div class="game-container">
     <div class="top-bar">
       <div class="header-title">NOONER</div>
-      <button class="sound-btn" id="sound-toggle" onclick="toggleSound()" title="الصوت">🔊</button>
+      <div class="top-actions">
+        <button class="icon-btn" id="undo-btn" onclick="undoLastMove()" title="رجوع خطوة" disabled>↩️</button>
+        <button class="icon-btn" id="sound-toggle" onclick="toggleSound()" title="الصوت">🔊</button>
+      </div>
     </div>
 
     <div class="confidence-wrapper" title="نسبة تأكد Nooner">
@@ -286,7 +300,6 @@
       document.getElementById('sound-toggle').innerText = soundEnabled ? '🔊' : '🔇';
     }
 
-    // تم إضافة سؤال مخصص لقارة أستراليا/أوقيانوسيا عشان يوصلها بسهولة
     const questions = [
       { key: "arab", text: "هل بلدك دولة عربية؟" },
       { key: "africa", text: "هل بلدك تقع في قارة أفريقيا؟" },
@@ -298,7 +311,7 @@
       { key: "northAfrica", text: "هل بلدك تطل على البحر المتوسط من شمال أفريقيا؟" },
       { key: "levant", text: "هل بلدك من دول بلاد الشام؟" },
       { key: "nile", text: "هل يمر نهر النيل في بلدك؟" },
-      { key: "island", text: "هل بلدك عبارة عن جزيرة أو محاط بالكامل بالمياه؟" },
+      { key: "island", text: "هل بلدك عبارة عن جزيرة أو محاطة بالكامل بالمياه؟" },
       { key: "english", text: "هل اللغة الإنجليزية هي اللغة الرسمية الأولى في بلدك؟" },
       { key: "spanish", text: "هل يتحدث سكان بلدك اللغة الإسبانية؟" },
       { key: "monarchy", text: "هل نظام الحكم في بلدك مَلَكي (ملك / أمير / سلطان)؟" },
@@ -307,7 +320,7 @@
       { key: "europeanUnion", text: "هل بلدك عضو في الاتحاد الأوروبي؟" }
     ];
 
-    const countries = [
+    const countriesData = [
       { name: "مصر", flag: "🇪🇬", quote: "« يا عم صلي على النبي.. أم الدنيا! »", fact: "العاصمة: القاهرة • العملة: الجنيه المصري", arab: true, africa: true, asia: false, europe: false, americas: false, oceania: false, gulf: false, northAfrica: true, levant: false, nile: true, island: false, english: false, spanish: false, monarchy: false, redSea: true, hugeArea: false, europeanUnion: false },
       { name: "السعودية", flag: "🇸🇦", quote: "« عِزوة وفخر.. هلا والله! »", fact: "العاصمة: الرياض • العملة: الريال السعودي", arab: true, africa: false, asia: true, europe: false, americas: false, oceania: false, gulf: true, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: true, redSea: true, hugeArea: false, europeanUnion: false },
       { name: "الإمارات", flag: "🇦🇪", quote: "« دار الزين.. رقم 1 دائماً! »", fact: "العاصمة: أبوظبي • تضم أطول برج في العالم", arab: true, africa: false, asia: true, europe: false, americas: false, oceania: false, gulf: true, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: true, redSea: false, hugeArea: false, europeanUnion: false },
@@ -345,28 +358,41 @@
       { name: "أستراليا", flag: "🇦🇺", quote: "« G'day mate! No worries! »", fact: "العاصمة: كانبرا • قارة ودولة في نفس الوقت", arab: false, africa: false, asia: false, europe: false, americas: false, oceania: true, gulf: false, northAfrica: false, levant: false, nile: false, island: true, english: true, spanish: false, monarchy: true, redSea: false, hugeArea: true, europeanUnion: false }
     ];
 
-    let possibleCountries = [...countries];
+    let scores = [];
+    let historyStack = [];
     let askedKeys = [];
     let currentQuestion = null;
     let questionCount = 0;
     let lastGuessedCountry = null;
 
+    function initScores() {
+      scores = countriesData.map(c => ({ country: c, score: 0 }));
+    }
+
+    function getTopCandidates() {
+      const sorted = [...scores].sort((a, b) => b.score - a.score);
+      const maxScore = sorted[0].score;
+      // نركز على الدول القريبة من أعلى نقطة
+      return sorted.filter(item => item.score >= maxScore - 2).map(item => item.country);
+    }
+
     function updateConfidence() {
-      const total = countries.length;
-      const remaining = possibleCountries.length;
-      const percentage = Math.max(10, Math.round(((total - remaining + 1) / total) * 100));
+      const sorted = [...scores].sort((a, b) => b.score - a.score);
+      const diff = sorted[0].score - (sorted[1] ? sorted[1].score : 0);
+      const percentage = Math.min(95, Math.max(10, 15 + (questionCount * 10) + (diff * 12)));
       document.getElementById('confidence-bar').style.width = percentage + '%';
     }
 
     function getBestQuestion() {
+      const candidates = getTopCandidates();
       let bestQ = null;
       let bestDiff = Infinity;
 
       for (let q of questions) {
         if (askedKeys.includes(q.key)) continue;
 
-        let yesCount = possibleCountries.filter(c => c[q.key] === true).length;
-        let noCount = possibleCountries.filter(c => c[q.key] === false).length;
+        let yesCount = candidates.filter(c => c[q.key] === true).length;
+        let noCount = candidates.filter(c => c[q.key] === false).length;
 
         if (yesCount === 0 || noCount === 0) continue;
 
@@ -381,20 +407,22 @@
 
     function nextTurn() {
       updateConfidence();
+      document.getElementById('undo-btn').disabled = historyStack.length === 0;
 
-      if (possibleCountries.length === 1) {
-        showGuess(possibleCountries[0]);
+      const sorted = [...scores].sort((a, b) => b.score - a.score);
+      const top1 = sorted[0];
+      const top2 = sorted[1];
+
+      // لو الفارق بين الأول والتاني كبير (أو خلصت الأسئلة الفاصلة)
+      if ((top1.score - top2.score >= 5 && questionCount >= 3) || questionCount >= 10) {
+        showGuess(top1.country);
         return;
       }
 
       currentQuestion = getBestQuestion();
 
-      if (!currentQuestion || possibleCountries.length === 0) {
-        if (possibleCountries.length > 0) {
-          showGuess(possibleCountries[0]);
-        } else {
-          showFailure();
-        }
+      if (!currentQuestion) {
+        showGuess(top1.country);
         return;
       }
 
@@ -406,15 +434,50 @@
 
     function handleAnswer(answer) {
       playClick(answer);
+
+      // حفظ الحالة الحالية عشان زرار الرجوع
+      historyStack.push({
+        scores: JSON.parse(JSON.stringify(scores)),
+        askedKeys: [...askedKeys],
+        questionCount: questionCount
+      });
+
       if (answer !== null && currentQuestion) {
-        possibleCountries = possibleCountries.filter(c => c[currentQuestion.key] === answer);
+        scores.forEach(item => {
+          if (item.country[currentQuestion.key] === answer) {
+            item.score += 3; // إجابة مطابقة
+          } else {
+            item.score -= 2; // إجابة مخالفة (تقلل النقاط بس متحذفش البلد نهائياً)
+          }
+        });
       }
+
+      nextTurn();
+    }
+
+    function undoLastMove() {
+      if (historyStack.length === 0) return;
+      playClick(null);
+      const prevState = historyStack.pop();
+      scores = prevState.scores;
+      askedKeys = prevState.askedKeys;
+      questionCount = prevState.questionCount - 1;
+
+      document.getElementById('controls').innerHTML = `
+        <button class="btn btn-yes" onclick="handleAnswer(true)">أيوه</button>
+        <button class="btn btn-no" onclick="handleAnswer(false)">لأ</button>
+        <button class="btn btn-unknown" onclick="handleAnswer(null)">مش متأكد</button>
+      `;
+
+      // إعادة السؤال اللي قبل الخطوة
+      askedKeys.pop();
       nextTurn();
     }
 
     function showGuess(country) {
       lastGuessedCountry = country;
       document.getElementById('confidence-bar').style.width = '100%';
+      document.getElementById('undo-btn').disabled = false;
       document.getElementById('question-counter').innerText = `Nooner عرفها في ${questionCount} أسئلة!`;
       document.getElementById('dialogue-box').innerHTML = `
         <div>
@@ -426,12 +489,39 @@
       `;
       document.getElementById('controls').innerHTML = `
         <button class="btn btn-yes" onclick="celebrate()">صح 100%! 🎉</button>
-        <button class="btn btn-no" onclick="showFailure()">لأ غلط 😅</button>
+        <button class="btn btn-no" onclick="showSecondGuess()">لأ غلط 😅</button>
       `;
+    }
+
+    // ميزة إضافية: لو Nooner غلط في التخمين الأول، يجرب التخمين التاني الأعلى في النقاط!
+    function showSecondGuess() {
+      playClick(false);
+      const sorted = [...scores].sort((a, b) => b.score - a.score);
+      const secondCountry = sorted.find(item => item.country.name !== lastGuessedCountry.name);
+
+      if (secondCountry && secondCountry.score > 0) {
+        lastGuessedCountry = secondCountry.country;
+        document.getElementById('question-counter').innerText = "محاولة تانية من Nooner!";
+        document.getElementById('dialogue-box').innerHTML = `
+          <div>
+            طب أكيد أنت من <strong>${secondCountry.country.name}</strong>!
+            <span class="result-flag">${secondCountry.country.flag}</span>
+            <div class="quote-box">${secondCountry.country.quote}</div>
+            <div class="fact-badge">${secondCountry.country.fact}</div>
+          </div>
+        `;
+        document.getElementById('controls').innerHTML = `
+          <button class="btn btn-yes" onclick="celebrate()">أيوه هي دي! 🎉</button>
+          <button class="btn btn-no" onclick="showFailure()">برضو لأ 😅</button>
+        `;
+      } else {
+        showFailure();
+      }
     }
 
     function celebrate() {
       playWin();
+      document.getElementById('undo-btn').disabled = true;
       document.getElementById('dialogue-box').innerHTML = `
         طبعاً Nooner ما بيغلطش! 😎<br>
         <span style="font-size: 14px; color: #94a3b8; margin-top: 6px; display:block;">تحدى صحابك وشوف Nooner هيعرف بلدهم ولا لأ!</span>
@@ -451,6 +541,7 @@
 
     function showFailure() {
       playClick(false);
+      document.getElementById('undo-btn').disabled = true;
       document.getElementById('question-counter').innerText = "يا إلهي!";
       document.getElementById('dialogue-box').innerText = "واضح إن بلدك نادرة جداً أو اللفة حيرتني! نلعب تاني ونعوضها؟ 🤔";
       document.getElementById('controls').innerHTML = `
@@ -460,22 +551,8 @@
 
     function restartGame() {
       playClick(true);
-      possibleCountries = [...countries];
-      askedKeys = [];
-      currentQuestion = null;
-      questionCount = 0;
-      document.getElementById('controls').innerHTML = `
-        <button class="btn btn-yes" onclick="handleAnswer(true)">أيوه</button>
-        <button class="btn btn-no" onclick="handleAnswer(false)">لأ</button>
-        <button class="btn btn-unknown" onclick="handleAnswer(null)">مش متأكد</button>
-      `;
-      nextTrust(); // تم التصحيح لـ nextTurn
-    }
-
-    // تصحيح استدعاء الدالة البرمجية
-    function restartGame() {
-      playClick(true);
-      possibleCountries = [...countries];
+      initScores();
+      historyStack = [];
       askedKeys = [];
       currentQuestion = null;
       questionCount = 0;
@@ -487,6 +564,7 @@
       nextTurn();
     }
 
+    initScores();
     nextTurn();
   </script>
 
