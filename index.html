@@ -70,7 +70,6 @@
       justify-content: center;
     }
 
-    /* شريط ذكاء Nooner */
     .confidence-wrapper {
       width: 100%;
       background: #0f172a;
@@ -252,7 +251,6 @@
   </div>
 
   <script>
-    // نظام المؤثرات الصوتية بدون الحاجة لملفات خارجية
     let soundEnabled = true;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -272,7 +270,7 @@
     }
 
     function playClick(isYes) {
-      if (navigator.vibrate) navigator.vibrate(25); // اهتزاز خفيف للفون
+      if (navigator.vibrate) navigator.vibrate(25);
       playTone(isYes === true ? 520 : isYes === false ? 320 : 420, 'sine', 0.12);
     }
 
@@ -443,7 +441,8 @@
     }
 
     function shareResult() {
-      const text = `المارد الذكي Nooner عرف إنني من ${lastGuessedCountry.name} ${lastGuessedCountry.flag} في ${questionCount} أسئلة بس! جرب تتحداه دلوقتي 🔥`;
+      const gameLink = "https://mrlight4321.github.io/NOONER/";
+      const text = `المارد الذكي Nooner عرف إنني من ${lastGuessedCountry.name} ${lastGuessedCountry.flag} في ${questionCount} أسئلة بس! 🔥\nتحداه دلوقتي من هنا 👇\n${gameLink}`;
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
       window.open(url, '_blank');
     }
