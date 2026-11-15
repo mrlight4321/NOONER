@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Nooner - تحدي تخمين الدول</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1e1b4b, #090d16);
+      color: #ffffff;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      overflow-x: hidden;
+    }
+
+    .game-container {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 26px;
+      width: 100%;
+      max-width: 430px;
+      padding: 22px 18px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+      position: relative;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .header-title {
+      font-size: 26px;
+      font-weight: 900;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+
+    .sound-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* شريط ذكاء Nooner */
+    .confidence-wrapper {
+      width: 100%;
+      background: #0f172a;
+      height: 8px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 15px;
+      border: 1px solid #334155;
+    }
+
+    .confidence-bar {
+      height: 100%;
+      width: 10%;
+      background: linear-gradient(90deg, #38bdf8, #10b981);
+      transition: width 0.4s ease;
+      border-radius: 10px;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 115px;
+      height: 115px;
+      margin: 0 auto 12px;
+    }
+
+    .nooner-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid #38bdf8;
+      box-shadow: 0 0 22px rgba(56, 189, 248, 0.5);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-7px); }
+    }
+
+    .progress-text {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .speech-bubble {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 18px 15px;
+      margin-bottom: 18px;
+      min-height: 105px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.5;
+      color: #f8fafc;
+      transition: all 0.25s ease;
+    }
+
+    .quote-box {
+      font-size: 14px;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-top: 10px;
+      border: 1px dashed rgba(56, 189, 248, 0.4);
+      width: 100%;
+    }
+
+    .fact-badge {
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-top: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 5px 10px;
+      border-radius: 20px;
+    }
+
+    .buttons-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 16px 12px;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+      color: white;
+      touch-action: manipulation;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn-yes {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-no {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-unknown {
+      grid-column: span 2;
+      background: #334155;
+      color: #e2e8f0;
+      padding: 13px;
+      font-size: 15px;
+    }
+
+    .btn-restart {
+      grid-column: span 2;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+    }
+
+    .btn-share {
+      grid-column: span 2;
+      background: #25D366;
+      color: #fff;
+      font-size: 15px;
+      padding: 12px;
+    }
+
+    .result-flag {
+      font-size: 52px;
+      margin: 4px 0;
+      display: block;
+    }
+
+    @media (max-width: 360px) {
+      .speech-bubble { font-size: 16px; min-height: 90px; }
+      .btn { padding: 14px 10px; font-size: 16px; }
+      .avatar-wrapper { width: 95px; height: 95px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <div class="top-bar">
+      <div class="header-title">NOONER</div>
+      <button class="sound-btn" id="sound-toggle" onclick="toggleSound()" title="الصوت">🔊</button>
+    </div>
+
+    <div class="confidence-wrapper" title="نسبة تأكد Nooner">
+      <div class="confidence-bar" id="confidence-bar"></div>
+    </div>
+    
+    <div class="avatar-wrapper">
+      <img src="https://d.top4top.io/p_3971vjsu31.png" alt="Nooner" class="nooner-img">
+    </div>
+
+    <div class="progress-text" id="question-counter">السؤال رقم 1</div>
+
+    <div class="speech-bubble" id="dialogue-box">
+      فكر في بلدك... وخلي Nooner يخمنها!
+    </div>
+
+    <div class="buttons-grid" id="controls">
+      <button class="btn btn-yes" onclick="handleAnswer(true)">أيوه</button>
+      <button class="btn btn-no" onclick="handleAnswer(false)">لأ</button>
+      <button class="btn btn-unknown" onclick="handleAnswer(null)">مش متأكد</button>
+    </div>
+  </div>
+
+  <script>
+    // نظام المؤثرات الصوتية بدون الحاجة لملفات خارجية
+    let soundEnabled = true;
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, type, duration) {
+      if (!soundEnabled) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playClick(isYes) {
+      if (navigator.vibrate) navigator.vibrate(25); // اهتزاز خفيف للفون
+      playTone(isYes === true ? 520 : isYes === false ? 320 : 420, 'sine', 0.12);
+    }
+
+    function playWin() {
+      if (navigator.vibrate) navigator.vibrate([50, 50, 100]);
+      setTimeout(() => playTone(523.25, 'triangle', 0.15), 0);
+      setTimeout(() => playTone(659.25, 'triangle', 0.15), 120);
+      setTimeout(() => playTone(783.99, 'triangle', 0.3), 240);
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sound-toggle').innerText = soundEnabled ? '🔊' : '🔇';
+    }
+
+    const questions = [
+      { key: "arab", text: "هل بلدك دولة عربية؟" },
+      { key: "africa", text: "هل بلدك تقع في قارة أفريقيا؟" },
+      { key: "asia", text: "هل بلدك تقع في قارة آسيا؟" },
+      { key: "europe", text: "هل بلدك تقع في قارة أوروبا؟" },
+      { key: "americas", text: "هل بلدك في الأمريكتين (الشمالية أو الجنوبية)؟" },
+      { key: "gulf", text: "هل بلدك من دول الخليج العربي؟" },
+      { key: "northAfrica", text: "هل بلدك تطل على البحر المتوسط من شمال أفريقيا؟" },
+      { key: "levant", text: "هل بلدك من دول بلاد الشام؟" },
+      { key: "nile", text: "هل يمر نهر النيل في بلدك؟" },
+      { key: "island", text: "هل بلدك عبارة عن جزيرة أو مجموعة جزر؟" },
+      { key: "english", text: "هل اللغة الإنجليزية هي اللغة الرسمية الأولى في بلدك؟" },
+      { key: "spanish", text: "هل يتحدث سكان بلدك اللغة الإسبانية؟" },
+      { key: "monarchy", text: "هل نظام الحكم في بلدك مَلَكي (ملك / أمير / سلطان)؟" },
+      { key: "redSea", text: "هل تطل بلدك على البحر الأحمر؟" },
+      { key: "hugeArea", text: "هل مساحة بلدك ضخمة جداً (من أكبر 10 دول في العالم)؟" },
+      { key: "europeanUnion", text: "هل بلدك عضو في الاتحاد الأوروبي؟" }
+    ];
+
+    const countries = [
+      { name: "مصر", flag: "🇪🇬", quote: "« يا عم صلي على النبي.. أم الدنيا! »", fact: "العاصمة: القاهرة • العملة: الجنيه المصري", arab: true, africa: true, asia: false, europe: false, americas: false, gulf: false, northAfrica: true, levant: false, nile: true, island: false, english: false, spanish: false, monarchy: false, redSea: true, hugeArea: false, europeanUnion: false },
+      { name: "السعودية", flag: "🇸🇦", quote: "« عِزوة وفخر.. هلا والله! »", fact: "العاصمة: الرياض • العملة: الريال السعودي", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: true, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: true, redSea: true, hugeArea: false, europeanUnion: false },
+      { name: "الإمارات", flag: "🇦🇪", quote: "« دار الزين.. رقم 1 دائماً! »", fact: "العاصمة: أبوظبي • تضم أطول برج في العالم", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: true, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: true, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "المغرب", flag: "🇲🇦", quote: "« ديما مغرب.. تبارك الله عليك! »", fact: "العاصمة: الرباط • العملة: الدرهم المغربي", arab: true, africa: true, asia: false, europe: false, americas: false, gulf: false, northAfrica: true, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: true, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "الجزائر", flag: "🇩🇿", quote: "« تحيا الجزائر.. بلد المليون شهيد! »", fact: "أكبر دولة عربية وأفريقية من حيث المساحة", arab: true, africa: true, asia: false, europe: false, americas: false, gulf: false, northAfrica: true, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: true, europeanUnion: false },
+      { name: "تونس", flag: "🇹🇳", quote: "« يعيشك.. تونس الخضراء! »", fact: "العاصمة: تونس • العملة: الدينار التونسي", arab: true, africa: true, asia: false, europe: false, americas: false, gulf: false, northAfrica: true, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "الأردن", flag: "🇯🇴", quote: "« يا هلا بالنشامى! »", fact: "العاصمة: عمّان • موطن مدينة البتراء الأثرية", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: true, nile: false, island: false, english: false, spanish: false, monarchy: true, redSea: true, hugeArea: false, europeanUnion: false },
+      { name: "فلسطين", flag: "🇵🇸", quote: "« زهرة المدائن.. في القلب دائماً! »", fact: "العاصمة: القدس • أقدم مدن العالم المأهولة", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: true, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "لبنان", flag: "🇱🇧", quote: "« يا هلا فيك.. نورت يا غالي! »", fact: "العاصمة: بيروت • تشتهر بأشجار الأرز", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: true, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "سوريا", flag: "🇸🇾", quote: "« يا باطل.. الشام عِز وفخر! »", fact: "العاصمة: دمشق • أقدم عاصمة مأهولة في التاريخ", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: true, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "العراق", flag: "🇮🇶", quote: "« هلا بيك عيني.. أرض الرافدين! »", fact: "العاصمة: بغداد • مهد الحضارات القديمة", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "الكويت", flag: "🇰🇼", quote: "« يا هلا بالطيبين.. عِز يا كويت! »", fact: "العاصمة: الكويت • العملة: الدينار الكويتي", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: true, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: true, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "قطر", flag: "🇶🇦", quote: "« المجد للدوحة.. قطر سِند وعزوة! »", fact: "العاصمة: الدوحة • استضافت مونديال 2022", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: true, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: true, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "البحرين", flag: "🇧🇭", quote: "« يا هلا بأهل البحرين.. بلد اللؤلؤ! »", fact: "العاصمة: المنامة • أرخبيل من 33 جزيرة", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: true, northAfrica: false, levant: false, nile: false, island: true, english: false, spanish: false, monarchy: true, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "عُمان", flag: "🇴🇲", quote: "« سلطنة الأصالة والجمال الهادئ! »", fact: "العاصمة: مسقط • العملة: الريال العماني", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: true, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: true, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "اليمن", flag: "🇾🇪", quote: "« أصل العرب والحكمة يمنية! »", fact: "العاصمة: صنعاء • تشتهر بالبن اليمني الأصيل", arab: true, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: true, hugeArea: false, europeanUnion: false },
+      { name: "السودان", flag: "🇸🇩", quote: "« زول وعِز وفخر.. أرض النيلين! »", fact: "العاصمة: الخرطوم • يلتقي فيها النيل الأزرق والأبيض", arab: true, africa: true, asia: false, europe: false, americas: false, gulf: false, northAfrica: false, levant: false, nile: true, island: false, english: false, spanish: false, monarchy: false, redSea: true, hugeArea: false, europeanUnion: false },
+      { name: "ليبيا", flag: "🇱🇾", quote: "« يا أهل الكرم والجود.. ليبيا! »", fact: "العاصمة: طرابلس • أطول ساحل عربي على المتوسط", arab: true, africa: true, asia: false, europe: false, americas: false, gulf: false, northAfrica: true, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "الولايات المتحدة", flag: "🇺🇸", quote: "« The land of opportunity! »", fact: "العاصمة: واشنطن • تتكون من 50 ولاية", arab: false, africa: false, asia: false, europe: false, americas: true, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: true, spanish: false, monarchy: false, redSea: false, hugeArea: true, europeanUnion: false },
+      { name: "كندا", flag: "🇨🇦", quote: "« Maple leaf & pure nature! »", fact: "العاصمة: أوتاوا • ثاني أكبر دولة في العالم", arab: false, africa: false, asia: false, europe: false, americas: true, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: true, spanish: false, monarchy: true, redSea: false, hugeArea: true, europeanUnion: false },
+      { name: "البرازيل", flag: "🇧🇷", quote: "« Futebol e Alegria! »", fact: "العاصمة: برازيليا • الأكثر فوزاً بكأس العالم", arab: false, africa: false, asia: false, europe: false, americas: true, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: true, europeanUnion: false },
+      { name: "الأرجنتين", flag: "🇦🇷", quote: "« Muchachos, ahora nos volvimos ilusionar! »", fact: "العاصمة: بوينس آيرس • موطن التانجو وميسي", arab: false, africa: false, asia: false, europe: false, americas: true, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: true, monarchy: false, redSea: false, hugeArea: true, europeanUnion: false },
+      { name: "المكسيك", flag: "🇲🇽", quote: "« ¡Viva México! »", fact: "العاصمة: مكسيكو سيتي • موطن حضارة المايا", arab: false, africa: false, asia: false, europe: false, americas: true, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: true, monarchy: false, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "المملكة المتحدة (بريطانيا)", flag: "🇬🇧", quote: "« Keep Calm and Carry On! »", fact: "العاصمة: لندن • العملة: الجنيه الإسترليني", arab: false, africa: false, asia: false, europe: true, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: true, english: true, spanish: false, monarchy: true, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "فرنسا", flag: "🇫🇷", quote: "« C'est la vie! »", fact: "العاصمة: باريس • موطن برج إيفل", arab: false, africa: false, asia: false, europe: true, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: true },
+      { name: "ألمانيا", flag: "🇩🇪", quote: "« Ordnung muss sein! »", fact: "العاصمة: برلين • أكبر اقتصاد في أوروبا", arab: false, africa: false, asia: false, europe: true, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: true },
+      { name: "إسبانيا", flag: "🇪🇸", quote: "« ¡Viva España! »", fact: "العاصمة: مدريد • موطن الليجا والفلامنكو", arab: false, africa: false, asia: false, europe: true, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: true, monarchy: true, redSea: false, hugeArea: false, europeanUnion: true },
+      { name: "إيطاليا", flag: "🇮🇹", quote: "« Mamma mia & Dolce Vita! »", fact: "العاصمة: روما • موطن البيتزا والباستا", arab: false, africa: false, asia: false, europe: true, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: true },
+      { name: "روسيا", flag: "🇷🇺", quote: "« На здоровье! (Na zdorovye) »", fact: "العاصمة: موسكو • أكبر دولة في العالم مساحةً", arab: false, africa: false, asia: true, europe: true, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: true, europeanUnion: false },
+      { name: "تركيا", flag: "🇹🇷", quote: "« Merhaba ve Çay saati! »", fact: "العاصمة: أنقرة • تربط بين قارتي آسيا وأوروبا", arab: false, africa: false, asia: true, europe: true, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "اليابان", flag: "🇯🇵", quote: "« Ganbatte kudasai! (استمر بقوة) »", fact: "العاصمة: طوكيو • كوكب التكنولوجيا والأنمي", arab: false, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: true, english: false, spanish: false, monarchy: true, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "الصين", flag: "🇨🇳", quote: "« 加油 (Jiayou) - القوة والنجاح! »", fact: "العاصمة: بكين • موطن سور الصين العظيم", arab: false, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: true, europeanUnion: false },
+      { name: "الهند", flag: "🇮🇳", quote: "« Namaste! »", fact: "العاصمة: نيودلهي • موطن تاج محل", arab: false, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: true, spanish: false, monarchy: false, redSea: false, hugeArea: true, europeanUnion: false },
+      { name: "كوريا الجنوبية", flag: "🇰🇷", quote: "« Fighting! (화이팅) »", fact: "العاصمة: سول • عاصمة التكنولوجيا الحديثة", arab: false, africa: false, asia: true, europe: false, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: false, english: false, spanish: false, monarchy: false, redSea: false, hugeArea: false, europeanUnion: false },
+      { name: "أستراليا", flag: "🇦🇺", quote: "« G'day mate! No worries! »", fact: "العاصمة: كانبرا • قارة ودولة في نفس الوقت", arab: false, africa: false, asia: false, europe: false, americas: false, gulf: false, northAfrica: false, levant: false, nile: false, island: true, english: true, spanish: false, monarchy: true, redSea: false, hugeArea: true, europeanUnion: false }
+    ];
+
+    let possibleCountries = [...countries];
+    let askedKeys = [];
+    let currentQuestion = null;
+    let questionCount = 0;
+    let lastGuessedCountry = null;
+
+    function updateConfidence() {
+      const total = countries.length;
+      const remaining = possibleCountries.length;
+      const percentage = Math.max(10, Math.round(((total - remaining + 1) / total) * 100));
+      document.getElementById('confidence-bar').style.width = percentage + '%';
+    }
+
+    function getBestQuestion() {
+      let bestQ = null;
+      let bestDiff = Infinity;
+
+      for (let q of questions) {
+        if (askedKeys.includes(q.key)) continue;
+
+        let yesCount = possibleCountries.filter(c => c[q.key] === true).length;
+        let noCount = possibleCountries.filter(c => c[q.key] === false).length;
+
+        if (yesCount === 0 || noCount === 0) continue;
+
+        let diff = Math.abs(yesCount - noCount);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestQ = q;
+        }
+      }
+      return bestQ;
+    }
+
+    function nextTurn() {
+      updateConfidence();
+
+      if (possibleCountries.length === 1) {
+        showGuess(possibleCountries[0]);
+        return;
+      }
+
+      currentQuestion = getBestQuestion();
+
+      if (!currentQuestion || possibleCountries.length === 0) {
+        if (possibleCountries.length > 0) {
+          showGuess(possibleCountries[0]);
+        } else {
+          showFailure();
+        }
+        return;
+      }
+
+      questionCount++;
+      askedKeys.push(currentQuestion.key);
+      document.getElementById('question-counter').innerText = `السؤال رقم ${questionCount}`;
+      document.getElementById('dialogue-box').innerHTML = currentQuestion.text;
+    }
+
+    function handleAnswer(answer) {
+      playClick(answer);
+      if (answer !== null && currentQuestion) {
+        possibleCountries = possibleCountries.filter(c => c[currentQuestion.key] === answer);
+      }
+      nextTurn();
+    }
+
+    function showGuess(country) {
+      lastGuessedCountry = country;
+      document.getElementById('confidence-bar').style.width = '100%';
+      document.getElementById('question-counter').innerText = `Nooner عرفها في ${questionCount} أسئلة!`;
+      document.getElementById('dialogue-box').innerHTML = `
+        <div>
+          أنت من <strong>${country.name}</strong>!
+          <span class="result-flag">${country.flag}</span>
+          <div class="quote-box">${country.quote}</div>
+          <div class="fact-badge">${country.fact}</div>
+        </div>
+      `;
+      document.getElementById('controls').innerHTML = `
+        <button class="btn btn-yes" onclick="celebrate()">صح 100%! 🎉</button>
+        <button class="btn btn-no" onclick="showFailure()">لأ غلط 😅</button>
+      `;
+    }
+
+    function celebrate() {
+      playWin();
+      document.getElementById('dialogue-box').innerHTML = `
+        طبعاً Nooner ما بيغلطش! 😎<br>
+        <span style="font-size: 14px; color: #94a3b8; margin-top: 6px; display:block;">تحدى صحابك وشوف Nooner هيعرف بلدهم ولا لأ!</span>
+      `;
+      document.getElementById('controls').innerHTML = `
+        <button class="btn btn-share" onclick="shareResult()">مشاركة النتيجة على واتساب 📲</button>
+        <button class="btn btn-restart" onclick="restartGame()">العب مرة تانية 🔄</button>
+      `;
+    }
+
+    function shareResult() {
+      const text = `المارد الذكي Nooner عرف إنني من ${lastGuessedCountry.name} ${lastGuessedCountry.flag} في ${questionCount} أسئلة بس! جرب تتحداه دلوقتي 🔥`;
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
+
+    function showFailure() {
+      playClick(false);
+      document.getElementById('question-counter').innerText = "يا إلهي!";
+      document.getElementById('dialogue-box').innerText = "واضح إن بلدك نادرة جداً أو اللفة حيرتني! نلعب تاني ونعوضها؟ 🤔";
+      document.getElementById('controls').innerHTML = `
+        <button class="btn btn-restart" onclick="restartGame()">العب مرة تانية 🔄</button>
+      `;
+    }
+
+    function restartGame() {
+      playClick(true);
+      possibleCountries = [...countries];
+      askedKeys = [];
+      currentQuestion = null;
+      questionCount = 0;
+      document.getElementById('controls').innerHTML = `
+        <button class="btn btn-yes" onclick="handleAnswer(true)">أيوه</button>
+        <button class="btn btn-no" onclick="handleAnswer(false)">لأ</button>
+        <button class="btn btn-unknown" onclick="handleAnswer(null)">مش متأكد</button>
+      `;
+      nextTurn();
+    }
+
+    nextTurn();
+  </script>
+
+</body>
+</html>
